@@ -4,85 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RoutineFlow - Sequential Timer PWA</title>
-    <link rel="manifest" href="data:application/json;base64,eyJpY29ucyI6IFt7ICJzaXplcyI6ICI1MTJ4NTEyIiwgInR5cGUiOiAiZ2V0L2ljb24uMiIsICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQUk9GSUxFIiB9XSwgIm5hbWUiOiAiUm91dGluZUZsb3ciLCAic2hvcnRfbmFtZSI6ICJSaXQgRmxvdyIsICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLCAiYmFja2dyb3VuZF9jb2xvciI6ICIjMWUxZTJkIiwgInRoZW1lX2NvbG9yIjogIiMwMDdiZmYifQ==">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="css/style.css">
     
-    <style>
-        :root {
-            --color-bg: #f4f4f9;
-            --color-fg: #1e1e2d;
-            --color-primary: #007bff;
-            --color-accent: #28a745;
-            --color-text: #333;
-            --color-card-bg: #ffffff;
+    <script>
+        // Feature 7: Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js', { scope: './' })
+                    .then(reg => console.log('Service Worker registered:', reg.scope))
+                    .catch(err => console.error('Service Worker registration failed:', err));
+            });
         }
-        [data-theme="dark"] {
-            --color-bg: #1e1e2d;
-            --color-fg: #f4f4f9;
-            --color-primary: #17a2b8;
-            --color-accent: #28a745;
-            --color-text: #f4f4f9;
-            --color-card-bg: #2a2a3e;
-        }
-        [data-theme="focus"] {
-            --color-bg: #000000;
-            --color-fg: #ffffff;
-            --color-primary: #ffc107;
-            --color-accent: #dc3545;
-            --color-text: #ffffff;
-            --color-card-bg: #111111;
-        }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: var(--color-bg);
-            color: var(--color-text);
-            transition: background-color 0.3s, color 0.3s;
-        }
-        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
-        header { text-align: center; margin-bottom: 30px; }
-        button, .btn {
-            padding: 10px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background-color 0.2s;
-            margin: 5px;
-        }
-        .btn-primary { background-color: var(--color-primary); color: var(--color-fg); }
-        .btn-accent { background-color: var(--color-accent); color: var(--color-fg); }
-        .btn-danger { background-color: #dc3545; color: white; }
-        .card {
-            background-color: var(--color-card-bg);
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-        }
-        /* Dashboard Styles */
-        .group-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
-        .group-card { border-left: 5px solid var(--color-primary); display: flex; justify-content: space-between; align-items: center; }
-        /* Group Builder Styles */
-        .task-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding: 10px 0; }
-        .task-item input { margin-right: 10px; padding: 5px; border: 1px solid #ccc; border-radius: 3px; }
-        /* Active Timer Screen Styles */
-        #active-timer-screen {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-color: var(--color-bg);
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            padding: 20px;
-        }
-        #countdown-display { font-size: 8vw; font-weight: 300; margin: 20px 0; }
-        .progress-bar { width: 80%; height: 10px; background-color: #ccc; border-radius: 5px; overflow: hidden; margin: 20px 0; }
-        .progress-bar-fill { height: 100%; width: 0; background-color: var(--color-accent); transition: width 0.5s linear; }
-        .control-panel button { font-size: 1.2em; padding: 15px 25px; margin: 10px; }
-    </style>
+    </script>
 </head>
 <body>
 
@@ -98,12 +32,18 @@
                         <option value="focus">Focus Mode</option>
                     </select>
                 </label>
+                <label>Style:
+                    <select id="timer-style-select">
+                        <option value="digital">Digital</option>
+                        <option value="minimal">Minimal</option>
+                    </select>
+                </label>
             </div>
         </header>
 
         <section id="home-dashboard">
             <h2>Home Dashboard 🏠</h2>
-            <button class="btn-primary" onclick="showGroupBuilder()">+ Create New Group</button>
+            <button class="btn-primary" id="create-group-btn">+ Create New Group</button>
             <hr>
             <div class="group-list" id="groups-container">
                 </div>
@@ -112,508 +52,45 @@
         <section id="group-builder" style="display:none;">
             <h2>Group Builder 🛠️</h2>
             <div class="card">
-                <input type="text" id="group-name" placeholder="Group Name (e.g., Morning Prep)" style="width: 100%; padding: 10px; margin-bottom: 10px;">
                 <input type="hidden" id="group-id">
+                <input type="text" id="group-name" placeholder="Group Name (e.g., Morning Prep)" style="width: 100%; padding: 10px; margin-bottom: 10px;">
+                <input type="color" id="group-color" value="#007bff" style="height: 30px;">
+                
+                <h3>Tasks (Max 100)</h3>
                 <div id="tasks-container">
                     </div>
-                <button class="btn-accent" onclick="addTaskToBuilder()">+ Add Task</button>
+                <button class="btn-accent" id="add-task-btn">+ Add Task</button>
                 <div style="margin-top: 20px;">
-                    <button class="btn-primary" onclick="saveGroup()">Save Group</button>
-                    <button class="btn" onclick="showDashboard()">Cancel</button>
-                    <button class="btn-danger" id="delete-group-btn" style="display:none;" onclick="deleteGroup()">Delete</button>
+                    <button class="btn-primary" id="save-group-btn">Save Group</button>
+                    <button class="btn" id="cancel-builder-btn">Cancel</button>
+                    <button class="btn-danger" id="delete-group-btn" style="display:none;">Delete</button>
                 </div>
             </div>
         </section>
-
-        <section id="history-stats" style="display:none;">
-            <h2>History/Stats 📊</h2>
-            <p>Roadmap Feature: Tracking completed routines.</p>
-        </section>
     </div>
 
-    <div id="active-timer-screen">
-        <h2 id="timer-group-name">Group Name</h2>
-        <h3 id="current-task-name">Current Task</h3>
-        <p id="task-details">Duration: HH:MM:SS | Notification: Start/End</p>
+    <div id="active-timer-screen" class="timer-screen" style="display:none;">
+        <h2 id="timer-group-name"></h2>
+        <h3 id="current-task-name"></h3>
+        <p id="task-details"></p>
 
-        <div id="countdown-display">00:00:00</div>
+        <div id="countdown-display" class="digital-style">00:00:00</div>
 
         <div class="progress-bar">
             <div class="progress-bar-fill" id="timer-progress-bar"></div>
         </div>
 
-        <div id="next-task-info" style="margin-bottom: 20px;">Next: ...</div>
+        <div id="next-task-info" style="margin-bottom: 20px;"></div>
 
         <div class="control-panel">
-            <button class="btn-primary" id="pause-resume-btn" onclick="togglePause()">Pause</button>
-            <button class="btn-accent" onclick="skipTask()">Skip</button>
-            <button class="btn-danger" onclick="stopTimer()">Stop</button>
+            <button class="btn-primary" id="pause-resume-btn">Pause</button>
+            <button class="btn-accent" id="skip-task-btn">Skip</button>
+            <button class="btn-danger" id="stop-timer-btn">Stop</button>
         </div>
     </div>
 
-
-    <script>
-        // --- DATA STRUCTURES & LOCAL STORAGE ---
-
-        const MAX_GROUPS = 50;
-        const MAX_TASKS_PER_GROUP = 100;
-        const STORAGE_KEY = 'routineFlowGroups';
-        const SETTINGS_KEY = 'routineFlowSettings';
-        const NOTIFICATION_PERMISSION_KEY = 'notificationPermission';
-
-        let groups = [];
-        let settings = { theme: 'light' };
-        let notificationPermissionStatus = localStorage.getItem(NOTIFICATION_PERMISSION_KEY) || 'default';
-
-        // Timer State Variables
-        let activeGroup = null;
-        let currentTaskIndex = 0;
-        let timerInterval = null;
-        let isPaused = false;
-        let startTime = 0;
-        let taskDurationMs = 0;
-        let remainingTimeMs = 0;
-
-        // --- UTILS ---
-        const timeToMs = (timeStr) => {
-            const parts = timeStr.split(':').map(Number);
-            const h = parts[0] || 0;
-            const m = parts[1] || 0;
-            const s = parts[2] || 0;
-            return (h * 3600 + m * 60 + s) * 1000;
-        };
-
-        const msToTime = (ms) => {
-            const totalSeconds = Math.round(ms / 1000);
-            const h = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
-            const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
-            const s = String(totalSeconds % 60).padStart(2, '0');
-            return `${h}:${m}:${s}`;
-        };
-
-        // --- PERSISTENCE & INITIAL LOAD ---
-        function loadData() {
-            try {
-                groups = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-                settings = { ...settings, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') };
-                notificationPermissionStatus = localStorage.getItem(NOTIFICATION_PERMISSION_KEY) || 'default';
-            } catch (e) {
-                console.error("Error loading data from localStorage:", e);
-            }
-        }
-
-        function saveData() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(groups));
-            localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-        }
-
-        function applySettings() {
-            document.documentElement.setAttribute('data-theme', settings.theme);
-            document.getElementById('theme-select').value = settings.theme;
-        }
-
-        // --- SERVICE WORKER & NOTIFICATION FIXES (Feature 3 & 7) ---
-
-        // ⚠️ SERVICE WORKER CONTENT (Must be in a separate file, e.g., sw.js)
-        /* // sw.js content for basic offline/notification function:
-        self.addEventListener('install', () => { self.skipWaiting(); });
-        self.addEventListener('activate', event => { event.waitUntil(clients.claim()); });
-        self.addEventListener('fetch', event => { 
-            // Optional: Offline cache strategy goes here
-        });
-        self.addEventListener('notificationclick', event => {
-            // Focus the window when notification is clicked
-            event.notification.close();
-            event.waitUntil(clients.matchAll({ type: 'window' }).then(clientList => {
-                for (const client of clientList) {
-                    if (client.url.includes(self.location.origin) && 'focus' in client) {
-                        return client.focus();
-                    }
-                }
-                if (clients.openWindow) {
-                    return clients.openWindow('/');
-                }
-            }));
-        });
-        */
-
-        function registerServiceWorker() {
-            if ('serviceWorker' in navigator) {
-                // IMPORTANT: The path must point to an actual file (e.g., /sw.js)
-                // This is the fundamental constraint of the single-file request.
-                // For this template to fully work, you must create a file named 'sw.js'
-                // with the content provided above.
-                navigator.serviceWorker.register('/sw.js', { scope: './' })
-                    .then(() => console.log('Service Worker Registered'))
-                    .catch(error => console.error('Service Worker Registration Failed:', error));
-            }
-        }
-        
-        // FIX: Request permission only once in init (Feature 3 fix)
-        async function requestNotificationPermission() {
-            if ('Notification' in window && notificationPermissionStatus === 'default') {
-                const permission = await Notification.requestPermission();
-                notificationPermissionStatus = permission;
-                localStorage.setItem(NOTIFICATION_PERMISSION_KEY, permission);
-                console.log(`Notification Permission: ${permission}`);
-            }
-        }
-
-        /**
-         * Sends a non-intrusive system notification.
-         * FIX: Removed 'alert()' pop-ups.
-         */
-        function sendTaskNotification(taskName, type) {
-            if (Notification.permission === 'granted') {
-                const title = `RoutineFlow: ${activeGroup.name}`;
-                const body = `${type === 'start' ? 'Starting' : 'Completed'}: ${taskName}`;
-                
-                // Show notification in the system panel (Feature 3 requirement)
-                new Notification(title, {
-                    body: body,
-                    tag: 'routine-flow-timer', // Group notifications
-                    renotify: true, // Allow new notification sound/vibration
-                    silent: false, // Ensure system alert sound/vibration is used
-                    // Placeholder for HiOS optimization (requires Service Worker/Manifest interaction)
-                    vibrate: [200, 100, 200]
-                });
-            }
-        }
-
-        // --- WAKE LOCK PLACEHOLDER (Feature 7) ---
-        let wakeLock = null;
-
-        async function requestWakeLock() {
-            if ('wakeLock' in navigator) {
-                try {
-                    wakeLock = await navigator.wakeLock.request('screen');
-                    console.log('Wake Lock acquired!');
-                } catch (err) {
-                    console.error('Wake Lock request failed:', err);
-                }
-            }
-        }
-
-        function releaseWakeLock() {
-            if (wakeLock) {
-                wakeLock.release().then(() => {
-                    wakeLock = null;
-                    console.log('Wake Lock released.');
-                });
-            }
-        }
-
-        // --- NAVIGATION & UI RENDERING (Rest of the code remains largely the same) ---
-        
-        function setScreen(screenId) {
-            document.querySelectorAll('section').forEach(s => s.style.display = 'none');
-            document.getElementById('active-timer-screen').style.display = 'none';
-
-            if (screenId === 'active-timer-screen') {
-                document.getElementById('active-timer-screen').style.display = 'flex';
-                requestWakeLock();
-            } else {
-                document.getElementById(screenId).style.display = 'block';
-                releaseWakeLock();
-            }
-        }
-
-        function showDashboard() {
-            renderGroupCards();
-            setScreen('home-dashboard');
-        }
-
-        function showGroupBuilder(groupId = null) {
-            const tasksContainer = document.getElementById('tasks-container');
-            tasksContainer.innerHTML = '';
-            document.getElementById('group-id').value = '';
-            document.getElementById('group-name').value = '';
-            document.getElementById('delete-group-btn').style.display = 'none';
-
-            let groupToEdit = { name: '', tasks: [{ name: 'New Task 1', duration: '00:05:00', notify: 'end' }] };
-
-            if (groupId) {
-                groupToEdit = groups.find(g => g.id === groupId);
-                document.getElementById('group-id').value = groupId;
-                document.getElementById('group-name').value = groupToEdit.name;
-                document.getElementById('delete-group-btn').style.display = 'inline-block';
-            }
-
-            groupToEdit.tasks.forEach(task => addTaskToBuilder(task));
-
-            setScreen('group-builder');
-        }
-
-        function renderGroupCards() {
-            const container = document.getElementById('groups-container');
-            container.innerHTML = '';
-
-            if (groups.length === 0) {
-                container.innerHTML = '<p style="text-align:center; grid-column: 1 / -1;">No routines yet. Create your first Group!</p>';
-                return;
-            }
-
-            groups.forEach(group => {
-                const card = document.createElement('div');
-                card.className = 'card group-card';
-                card.style.borderLeftColor = group.color || 'var(--color-primary)';
-                card.innerHTML = `
-                    <div>
-                        <h3>${group.name}</h3>
-                        <p>${group.tasks.length} tasks</p>
-                    </div>
-                    <div>
-                        <button class="btn-primary" onclick="startTimer('${group.id}')">Start</button>
-                        <button class="btn" onclick="showGroupBuilder('${group.id}')">Edit</button>
-                        <button class="btn" onclick="duplicateGroup('${group.id}')">Copy</button>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        function addTaskToBuilder(task = { name: '', duration: '00:05:00', notify: 'end' }) {
-            const container = document.getElementById('tasks-container');
-            if (container.children.length >= MAX_TASKS_PER_GROUP) {
-                alert(`You can have a maximum of ${MAX_TASKS_PER_GROUP} tasks per group.`);
-                return;
-            }
-
-            const index = container.children.length;
-            const taskEl = document.createElement('div');
-            taskEl.className = 'task-item';
-            taskEl.innerHTML = `
-                <span style="font-weight: bold;">${index + 1}.</span>
-                <input type="text" placeholder="Task Name" value="${task.name}" data-task-field="name">
-                <input type="text" placeholder="HH:MM:SS" value="${task.duration}" data-task-field="duration" style="width: 100px;">
-                <select data-task-field="notify">
-                    <option value="none" ${task.notify === 'none' ? 'selected' : ''}>No Notify</option>
-                    <option value="start" ${task.notify === 'start' ? 'selected' : ''}>On Start</option>
-                    <option value="end" ${task.notify === 'end' ? 'selected' : ''}>On End</option>
-                    <option value="both" ${task.notify === 'both' ? 'selected' : ''}>Both</option>
-                </select>
-                <button class="btn-danger" style="padding: 5px 10px;" onclick="this.parentElement.remove()">Remove</button>
-            `;
-            container.appendChild(taskEl);
-        }
-
-        function saveGroup() {
-            const groupId = document.getElementById('group-id').value;
-            const groupName = document.getElementById('group-name').value.trim();
-            const taskElements = document.getElementById('tasks-container').children;
-
-            if (!groupName) { alert('Group name is required.'); return; }
-
-            const newTasks = [];
-            for (const el of taskElements) {
-                const name = el.querySelector('[data-task-field="name"]').value.trim();
-                const duration = el.querySelector('[data-task-field="duration"]').value.trim();
-                const notify = el.querySelector('[data-task-field="notify"]').value;
-
-                if (!name || !duration) { continue; }
-                if (timeToMs(duration) <= 0) { alert('Task duration must be greater than 0.'); return; }
-
-                newTasks.push({ name, duration, notify });
-            }
-
-            if (newTasks.length === 0) { alert('A group must have at least one task.'); return; }
-
-            if (groupId) {
-                const index = groups.findIndex(g => g.id === groupId);
-                if (index !== -1) {
-                    groups[index].name = groupName;
-                    groups[index].tasks = newTasks;
-                }
-            } else {
-                if (groups.length >= MAX_GROUPS) {
-                    alert(`You have reached the maximum of ${MAX_GROUPS} groups.`);
-                    return;
-                }
-                const newGroup = {
-                    id: 'group-' + Date.now(),
-                    name: groupName,
-                    color: '#' + Math.floor(Math.random()*16777215).toString(16),
-                    tasks: newTasks
-                };
-                groups.push(newGroup);
-            }
-
-            saveData();
-            showDashboard();
-        }
-
-        function deleteGroup() {
-            const groupId = document.getElementById('group-id').value;
-            if (confirm('Are you sure you want to delete this group?')) {
-                groups = groups.filter(g => g.id !== groupId);
-                saveData();
-                showDashboard();
-            }
-        }
-        
-        function duplicateGroup(groupId) {
-            const original = groups.find(g => g.id === groupId);
-            if (!original) return;
-
-            if (groups.length >= MAX_GROUPS) {
-                alert(`You have reached the maximum of ${MAX_GROUPS} groups.`);
-                return;
-            }
-
-            const newGroup = JSON.parse(JSON.stringify(original));
-            newGroup.id = 'group-' + Date.now();
-            newGroup.name = `Copy of ${original.name}`;
-            groups.push(newGroup);
-
-            saveData();
-            showDashboard();
-        }
-
-
-        // --- TIMER ENGINE ---
-
-        function startTimer(groupId) {
-            activeGroup = groups.find(g => g.id === groupId);
-            currentTaskIndex = 0;
-            isPaused = false;
-            
-            if (!activeGroup || activeGroup.tasks.length === 0) {
-                alert("Cannot start an empty group.");
-                return;
-            }
-
-            processTask();
-            setScreen('active-timer-screen');
-        }
-
-        function processTask() {
-            if (currentTaskIndex >= activeGroup.tasks.length) {
-                stopTimer(true);
-                return;
-            }
-
-            const currentTask = activeGroup.tasks[currentTaskIndex];
-            taskDurationMs = timeToMs(currentTask.duration);
-            remainingTimeMs = taskDurationMs;
-            startTime = Date.now();
-            isPaused = false;
-
-            document.getElementById('timer-group-name').textContent = activeGroup.name;
-            document.getElementById('current-task-name').textContent = `${currentTaskIndex + 1}. ${currentTask.name}`;
-            document.getElementById('task-details').textContent = `Duration: ${currentTask.duration} | Notify: ${currentTask.notify}`;
-            document.getElementById('pause-resume-btn').textContent = 'Pause';
-            
-            const nextTask = activeGroup.tasks[currentTaskIndex + 1];
-            document.getElementById('next-task-info').textContent = nextTask ? `Next: ${nextTask.name}` : 'Next: End of Group';
-
-            if (currentTask.notify === 'start' || currentTask.notify === 'both') {
-                sendTaskNotification(currentTask.name, 'start');
-            }
-
-            clearInterval(timerInterval);
-            timerInterval = setInterval(timerTick, 100);
-        }
-        
-        function timerTick() {
-            if (isPaused) return;
-
-            const elapsed = Date.now() - startTime;
-            remainingTimeMs = Math.max(0, taskDurationMs - elapsed);
-
-            document.getElementById('countdown-display').textContent = msToTime(remainingTimeMs);
-
-            const progress = (1 - (remainingTimeMs / taskDurationMs)) * 100;
-            document.getElementById('timer-progress-bar').style.width = `${progress}%`;
-            
-            if (remainingTimeMs === 0) {
-                clearInterval(timerInterval);
-                const currentTask = activeGroup.tasks[currentTaskIndex];
-
-                if (currentTask.notify === 'end' || currentTask.notify === 'both') {
-                    sendTaskNotification(currentTask.name, 'end');
-                }
-                
-                currentTaskIndex++;
-                processTask();
-            }
-        }
-
-        function togglePause() {
-            isPaused = !isPaused;
-            document.getElementById('pause-resume-btn').textContent = isPaused ? 'Resume' : 'Pause';
-
-            if (!isPaused) {
-                startTime = Date.now() - (taskDurationMs - remainingTimeMs);
-                clearInterval(timerInterval);
-                timerInterval = setInterval(timerTick, 100);
-            } else {
-                clearInterval(timerInterval);
-            }
-        }
-
-        function skipTask() {
-            if (confirm('Skip this task and go to the next one?')) {
-                clearInterval(timerInterval);
-                currentTaskIndex++;
-                processTask();
-            }
-        }
-
-        function stopTimer(finished = false) {
-            if (!finished && !confirm('Are you sure you want to stop the routine?')) {
-                return;
-            }
-
-            clearInterval(timerInterval);
-            activeGroup = null;
-            currentTaskIndex = 0;
-            isPaused = false;
-            
-            showDashboard();
-            if (finished) {
-                 // Using a standard notification for completion, replacing the alert
-                 new Notification('RoutineFlow', { body: 'Routine Completed!', tag: 'routine-flow-finish' });
-            } else {
-                 new Notification('RoutineFlow', { body: 'Routine Stopped.', tag: 'routine-flow-stop' });
-            }
-        }
-
-        // --- EVENT LISTENERS & INITIALIZATION ---
-
-        document.getElementById('theme-select').addEventListener('change', (e) => {
-            settings.theme = e.target.value;
-            applySettings();
-            saveData();
-        });
-
-        // Initialize App
-        async function init() {
-            loadData();
-            applySettings();
-            
-            // FIX: Request permission only on initialization
-            await requestNotificationPermission(); 
-            // registerServiceWorker(); // Call this if you create the external sw.js file
-
-            if (groups.length === 0) {
-                // Example Data for first-time users
-                groups.push({
-                    id: 'group-100',
-                    name: 'Default Morning Routine',
-                    color: '#ff6347',
-                    tasks: [
-                        { name: 'Meditation', duration: '00:10:00', notify: 'end' },
-                        { name: 'Workout', duration: '00:30:00', notify: 'start' },
-                        { name: 'Shower', duration: '00:08:30', notify: 'end' }
-                    ]
-                });
-                saveData();
-            }
-
-            showDashboard();
-        }
-
-        init();
-    </script>
+    <script src="js/storage.js"></script>
+    <script src="js/timer-engine.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
