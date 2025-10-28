@@ -1,0 +1,133 @@
+:root {
+    --color-bg: #f4f4f9;
+    --color-fg: #1e1e2d;
+    --color-primary: #007bff;
+    --color-accent: #28a745;
+    --color-text: #333;
+    --color-card-bg: #ffffff;
+    --color-border: #e0e0e0;
+}
+/* Feature 4: Dark Theme */
+[data-theme="dark"] {
+    --color-bg: #1e1e2d;
+    --color-fg: #f4f4f9;
+    --color-primary: #17a2b8;
+    --color-accent: #28a745;
+    --color-text: #f4f4f9;
+    --color-card-bg: #2a2a3e;
+    --color-border: #44445c;
+}
+/* Feature 4: Focus Mode */
+[data-theme="focus"] {
+    --color-bg: #000000;
+    --color-fg: #ffffff;
+    --color-primary: #ffc107;
+    --color-accent: #dc3545;
+    --color-text: #ffffff;
+    --color-card-bg: #111111;
+    --color-border: #333;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    transition: background-color 0.3s, color 0.3s;
+    min-height: 100vh;
+}
+.container { max-width: 900px; margin: 0 auto; padding: 20px; }
+header { text-align: center; margin-bottom: 30px; }
+h1, h2, h3 { color: var(--color-primary); }
+
+/* Buttons */
+button, .btn {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+    margin: 5px 2px;
+}
+.btn-primary { background-color: var(--color-primary); color: var(--color-fg); }
+.btn-accent { background-color: var(--color-accent); color: var(--color-fg); }
+.btn-danger { background-color: #dc3545; color: white; }
+
+/* Cards & Forms (Feature 5) */
+.card {
+    background-color: var(--color-card-bg);
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    border: 1px solid var(--color-border);
+}
+.group-list { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
+    gap: 15px; 
+}
+.group-card { 
+    border-left: 5px solid var(--color-primary); 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+    padding-left: 10px;
+}
+.task-item { 
+    display: flex; 
+    align-items: center; 
+    gap: 10px;
+    border-bottom: 1px solid var(--color-border); 
+    padding: 10px 0; 
+}
+.task-item input, .task-item select {
+    padding: 8px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background-color: var(--color-card-bg);
+    color: var(--color-text);
+}
+.task-item input[type="text"] { flex-grow: 1; }
+.task-item input[data-task-field="duration"] { width: 80px; }
+
+/* Feature 5: Active Timer Screen */
+#active-timer-screen {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-color: var(--color-bg);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* Feature 4 & 2: Timer Styles */
+#countdown-display { 
+    font-weight: 300; 
+    margin: 20px 0;
+    transition: font-size 0.3s;
+}
+.digital-style { font-size: 10vw; letter-spacing: 2px; }
+.minimal-style { font-size: 14vw; letter-spacing: 0; }
+
+.progress-bar { 
+    width: 90%; 
+    max-width: 600px;
+    height: 15px; 
+    background-color: var(--color-border); 
+    border-radius: 5px; 
+    overflow: hidden; 
+    margin: 20px 0; 
+}
+.progress-bar-fill { 
+    height: 100%; 
+    width: 0; 
+    background-color: var(--color-accent); 
+    transition: none; /* Removed transition for accurate tick-based updates */
+}
